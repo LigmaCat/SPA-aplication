@@ -1,0 +1,191 @@
+<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 500px;
+        margin: 80px auto;
+        padding: 20px;
+    }
+
+    input {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        box-sizing: border-box;
+    }
+
+    button {
+        padding: 12px 20px;
+        cursor: pointer;
+    }
+
+    #message {
+        margin-top: 20px;
+    }
+
+    a {
+        display: inline-block;
+        margin-top: 20px;
+    }
+</style>
+
+</head> <body>
+<h1>Create Account</h1>
+
+<form id="registerForm">
+
+    <input
+        type="text"
+        id="name"
+        placeholder="Name"
+        required
+    >
+
+    <input
+        type="email"
+        id="email"
+        placeholder="Email"
+        required
+    >
+
+    <input
+        type="password"
+        id="password"
+        placeholder="Password"
+        required
+    >
+
+    <input
+        type="password"
+        id="password_confirmation"
+        placeholder="Confirm password"
+        required
+    >
+
+    <button type="submit">
+        Register
+    </button>
+
+</form>
+
+<div id="message"></div>
+
+<a href="login.html">
+    Already have an account? Login
+</a>
+
+
+<script>
+
+    const form = document.getElementById('registerForm');
+
+    const message = document.getElementById('message');
+
+
+    form.addEventListener('submit', function(event) {
+
+        event.preventDefault();
+
+
+        const name =
+            document.getElementById('name').value;
+
+        const email =
+            document.getElementById('email').value;
+
+        const password =
+            document.getElementById('password').value;
+
+        const passwordConfirmation =
+            document.getElementById('password_confirmation').value;
+
+
+        fetch('http://127.0.0.1:8000/api/register', {
+
+            method: 'POST',
+
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+
+            body: JSON.stringify({
+
+                name: name,
+                email: email,
+                password: password,
+                password_confirmation: passwordConfirmation
+
+            })
+
+        })
+
+        .then(async response => {
+
+            const data = await response.json();
+
+            console.log('Register response:', data);
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.message || 'Registration failed'
+                );
+
+            }
+
+
+            return data;
+
+        })
+
+        .then(data => {
+
+            // Save the token
+
+            localStorage.setItem(
+                'token',
+                data.token
+            );
+
+
+            // Save the user
+
+            localStorage.setItem(
+                'user',
+                JSON.stringify(data.user)
+            );
+
+
+            message.innerHTML =
+                'Account created!';
+
+
+            // Go directly to posts
+
+            setTimeout(() => {
+
+                window.location.href = 'index.html';
+
+            }, 500);
+
+        })
+
+        .catch(error => {
+
+            console.error(error);
+
+            message.innerHTML =
+                'Error: ' + error.message;
+
+        });
+
+    });
+
+</script>
+
+</body> </html>
