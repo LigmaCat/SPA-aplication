@@ -1,65 +1,157 @@
-<!DOCTYPE html> <html lang="en"> <head>
-<meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="en">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+<head>
 
-<title>Posts</title>
+    <meta charset="UTF-8">
 
-<style>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    body {
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 50px auto;
-    }
+    <title>Posts</title>
 
-    input,
-    textarea {
-        display: block;
-        width: 100%;
-        margin-bottom: 15px;
-        padding: 10px;
-        box-sizing: border-box;
-    }
+    <style>
 
-    textarea {
-        height: 150px;
-    }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+        }
 
-    button {
-        padding: 10px 20px;
-        cursor: pointer;
-        margin-right: 5px;
-    }
+        input,
+        textarea {
+            display: block;
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
 
-    .post {
-        border: 1px solid #ccc;
-        padding: 20px;
-        margin-top: 20px;
-    }
+        textarea {
+            height: 150px;
+        }
 
-    .post h2 {
-        margin-top: 0;
-    }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
 
-    .post-buttons {
-        margin-top: 15px;
-    }
+        .post {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-top: 20px;
+        }
 
-    #result {
-        margin-top: 20px;
-    }
+        .post h2 {
+            margin-top: 0;
+        }
 
-    #logout {
-        float: right;
-    }
+        .post-buttons {
+            margin-top: 15px;
+        }
 
-</style>
+        #result {
+            margin-top: 20px;
+        }
 
-</head> <body>
+        #logout {
+            float: right;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Loading overlay
+        |--------------------------------------------------------------------------
+        */
+
+        #loading {
+            position: fixed;
+
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 100%;
+
+            background: rgba(255, 255, 255, 0.75);
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            z-index: 9999;
+
+            opacity: 1;
+
+            transition: opacity 0.2s ease;
+
+        }
+
+
+        #loading.hidden {
+            opacity: 0;
+
+            pointer-events: none;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Spinner
+        |--------------------------------------------------------------------------
+        */
+
+        .spinner {
+
+            width: 45px;
+            height: 45px;
+
+            border: 5px solid #ddd;
+
+            border-top-color: #3498db;
+
+            border-radius: 50%;
+
+            animation:
+                spin 0.8s linear infinite;
+
+        }
+
+
+        @keyframes spin {
+
+            to {
+                transform: rotate(360deg);
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!--
+|--------------------------------------------------------------------------
+| Global loading spinner
+|--------------------------------------------------------------------------
+-->
+
+<div id="loading" class="hidden">
+
+    <div class="spinner"></div>
+
+</div>
+
+
 <button id="logout">
     Logout
 </button>
@@ -109,6 +201,7 @@
 
 <script>
 
+
     /*
     |--------------------------------------------------------------------------
     | API
@@ -147,6 +240,115 @@
     const logoutButton =
         document.getElementById('logout');
 
+    const loading =
+        document.getElementById('loading');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Loading functions
+    |--------------------------------------------------------------------------
+    */
+
+    function showLoading() {
+
+        loading.classList.remove('hidden');
+
+    }
+
+
+    function hideLoading() {
+
+        loading.classList.add('hidden');
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | API helper
+    |--------------------------------------------------------------------------
+    |
+    | Visi fetch() requesti iet caur šo funkciju.
+    |
+    */
+
+    async function apiFetch(url, options = {}) {
+
+    showLoading();
+
+    try {
+
+        const token =
+            localStorage.getItem('token');
+
+
+        const response =
+            await fetch(url, {
+
+                ...options,
+
+                headers: {
+
+                    'Accept':
+                        'application/json',
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Always send the Sanctum token
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'Authorization':
+                        'Bearer ' + token,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Keep any headers supplied by the request
+                    |--------------------------------------------------------------------------
+                    */
+
+                    ...(options.headers || {})
+
+                }
+
+            });
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            `${options.method || 'GET'} ${url}:`,
+            response.status,
+            data
+        );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.message ||
+                'Request failed'
+            );
+
+        }
+
+
+        return data;
+
+    }
+
+    finally {
+
+        hideLoading();
+
+    }
+
+}
+
+
 
     /*
     |--------------------------------------------------------------------------
@@ -168,53 +370,26 @@
     |--------------------------------------------------------------------------
     */
 
-    function loadPosts() {
+    async function loadPosts() {
 
         posts.innerHTML =
             'Loading posts...';
 
-
-        fetch(`${API_URL}/posts`, {
-
-            method: 'GET',
-
-            headers: {
-
-                'Accept':
-                    'application/json'
-
-            }
-
-        })
-
-        .then(async response => {
+        try {
 
             const data =
-                await response.json();
+                await apiFetch(
+                    `${API_URL}/posts`,
+                    {
+                        method: 'GET',
 
-
-            console.log(
-                'GET /posts:',
-                response.status,
-                data
-            );
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    data.message ||
-                    'Could not load posts'
+                        headers: {
+                            'Accept':
+                                'application/json'
+                        }
+                    }
                 );
 
-            }
-
-
-            return data;
-
-        })
-
-        .then(data => {
 
             posts.innerHTML = '';
 
@@ -235,9 +410,9 @@
 
             });
 
-        })
+        }
 
-        .catch(error => {
+        catch (error) {
 
             console.error(
                 'LOAD POSTS ERROR:',
@@ -248,7 +423,7 @@
             posts.innerHTML =
                 '<p>Could not load posts.</p>';
 
-        });
+        }
 
     }
 
@@ -275,9 +450,13 @@
 
         postElement.innerHTML = `
 
-            <h2>${escapeHtml(post.title)}</h2>
+            <h2>
+                ${escapeHtml(post.title)}
+            </h2>
 
-            <p>${escapeHtml(post.body)}</p>
+            <p>
+                ${escapeHtml(post.body)}
+            </p>
 
             <div class="post-buttons">
 
@@ -311,7 +490,7 @@
 
     form.addEventListener(
         'submit',
-        function(event) {
+        async function(event) {
 
             event.preventDefault();
 
@@ -330,72 +509,50 @@
                     .trim();
 
 
-            fetch(`${API_URL}/posts`, {
+            try {
 
-                method: 'POST',
+                const post =
+                    await apiFetch(
+                        `${API_URL}/posts`,
+                        {
+                            method: 'POST',
 
-                headers: {
+                            headers: {
 
-                    'Content-Type':
-                        'application/json',
+                                'Content-Type':
+                                    'application/json',
 
-                    'Accept':
-                        'application/json',
+                                'Accept':
+                                    'application/json',
 
-                    'Authorization':
-                        'Bearer ' + token
+                                'Authorization':
+                                    'Bearer ' + token
 
-                },
+                            },
 
-                body: JSON.stringify({
+                            body: JSON.stringify({
 
-                    title: title,
+                                title: title,
 
-                    body: body
+                                body: body
 
-                })
+                            })
 
-            })
-
-            .then(async response => {
-
-                const data =
-                    await response.json();
-
-
-                console.log(
-                    'CREATE:',
-                    response.status,
-                    data
-                );
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        data.message ||
-                        'Could not create post'
+                        }
                     );
 
-                }
-
-
-                return data;
-
-            })
-
-            .then(post => {
 
                 showPost(post);
 
                 form.reset();
 
+
                 result.innerHTML =
                     'Post created!';
 
-            })
+            }
 
-            .catch(error => {
+            catch (error) {
 
                 console.error(
                     'CREATE ERROR:',
@@ -407,7 +564,7 @@
                     'Error: ' +
                     error.message;
 
-            });
+            }
 
         }
     );
@@ -419,7 +576,7 @@
     |--------------------------------------------------------------------------
     */
 
-    function editPost(id) {
+    async function editPost(id) {
 
         const postElement =
             document.getElementById(
@@ -467,67 +624,40 @@
         }
 
 
-        fetch(`${API_URL}/posts/${id}`, {
+        try {
 
-            method: 'PUT',
+            const updatedPost =
+                await apiFetch(
+                    `${API_URL}/posts/${id}`,
+                    {
+                        method: 'PUT',
 
-            headers: {
+                        headers: {
 
-                'Content-Type':
-                    'application/json',
+                            'Content-Type':
+                                'application/json',
 
-                'Accept':
-                    'application/json',
+                            'Accept':
+                                'application/json',
 
-                'Authorization':
-                    'Bearer ' + token
+                            'Authorization':
+                                'Bearer ' + token
 
-            },
+                        },
 
-            body: JSON.stringify({
+                        body: JSON.stringify({
 
-                title:
-                    newTitle,
+                            title:
+                                newTitle,
 
-                body:
-                    newBody
+                            body:
+                                newBody
 
-            })
+                        })
 
-        })
-
-        .then(async response => {
-
-            const data =
-                await response.json();
-
-
-            console.log(
-                'EDIT:',
-                response.status,
-                data
-            );
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    data.message ||
-                    'Could not edit post'
+                    }
                 );
 
-            }
-
-
-            return data;
-
-        })
-
-        .then(updatedPost => {
-
-            /*
-            Remove the old version
-            */
 
             const oldPost =
                 document.getElementById(
@@ -538,19 +668,15 @@
             oldPost.remove();
 
 
-            /*
-            Add the updated version
-            */
-
             showPost(updatedPost);
 
 
             result.innerHTML =
                 'Post updated!';
 
-        })
+        }
 
-        .catch(error => {
+        catch (error) {
 
             console.error(
                 'EDIT ERROR:',
@@ -562,7 +688,7 @@
                 'Error: ' +
                 error.message;
 
-        });
+        }
 
     }
 
@@ -573,7 +699,7 @@
     |--------------------------------------------------------------------------
     */
 
-    function deletePost(id) {
+    async function deletePost(id) {
 
         const confirmed =
             confirm(
@@ -588,50 +714,25 @@
         }
 
 
-        fetch(`${API_URL}/posts/${id}`, {
+        try {
 
-            method: 'DELETE',
+            await apiFetch(
+                `${API_URL}/posts/${id}`,
+                {
+                    method: 'DELETE',
 
-            headers: {
+                    headers: {
 
-                'Accept':
-                    'application/json',
+                        'Accept':
+                            'application/json',
 
-                'Authorization':
-                    'Bearer ' + token
+                        'Authorization':
+                            'Bearer ' + token
 
-            }
-
-        })
-
-        .then(async response => {
-
-            const data =
-                await response.json();
-
-
-            console.log(
-                'DELETE:',
-                response.status,
-                data
+                    }
+                }
             );
 
-
-            if (!response.ok) {
-
-                throw new Error(
-                    data.message ||
-                    'Could not delete post'
-                );
-
-            }
-
-
-            return data;
-
-        })
-
-        .then(() => {
 
             const postElement =
                 document.getElementById(
@@ -649,9 +750,9 @@
             result.innerHTML =
                 'Post deleted!';
 
-        })
+        }
 
-        .catch(error => {
+        catch (error) {
 
             console.error(
                 'DELETE ERROR:',
@@ -663,7 +764,7 @@
                 'Error: ' +
                 error.message;
 
-        });
+        }
 
     }
 
@@ -676,38 +777,26 @@
 
     logoutButton.addEventListener(
         'click',
-        function() {
+        async function() {
 
-            fetch(`${API_URL}/logout`, {
+            try {
 
-                method: 'POST',
+                await apiFetch(
+                    `${API_URL}/logout`,
+                    {
+                        method: 'POST',
 
-                headers: {
+                        headers: {
 
-                    'Accept':
-                        'application/json',
+                            'Accept':
+                                'application/json',
 
-                    'Authorization':
-                        'Bearer ' + token
+                            'Authorization':
+                                'Bearer ' + token
 
-                }
-
-            })
-
-            .then(async response => {
-
-                const data =
-                    await response.json();
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        data.message ||
-                        'Logout failed'
-                    );
-
-                }
+                        }
+                    }
+                );
 
 
                 localStorage.removeItem(
@@ -723,16 +812,16 @@
                 window.location.href =
                     'login.html';
 
-            })
+            }
 
-            .catch(error => {
+            catch (error) {
 
                 console.error(
                     'LOGOUT ERROR:',
                     error
                 );
 
-            });
+            }
 
         }
     );
@@ -767,6 +856,9 @@
 
     loadPosts();
 
+
 </script>
 
-</body> </html>
+</body>
+
+</html>
