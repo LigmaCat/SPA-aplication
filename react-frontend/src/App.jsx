@@ -1,72 +1,43 @@
-import { useEffect, useState } from 'react'
-import { apiFetch } from './api/api'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+
+import Index from './pages/Index'
+import Login from './pages/Login'
+import Register from './pages/Register'
+
+import ProtectedRoute from './components/ProtectedRoute'
+import Navbar from './components/Navbar'
 
 function App() {
 
-    const [posts, setPosts] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
-
-    useEffect(() => {
-
-        async function loadPosts() {
-
-            try {
-
-                const data =
-                    await apiFetch('/posts')
-
-                setPosts(data)
-
-            } catch (error) {
-
-                setError(error.message)
-
-            } finally {
-
-                setLoading(false)
-
-            }
-
-        }
-
-        loadPosts()
-
-    }, [])
-
-
-    if (loading) {
-        return <h1>Loading posts...</h1>
-    }
-
-
-    if (error) {
-        return <h1>Error: {error}</h1>
-    }
-
-
     return (
-        <div>
+        <BrowserRouter>
 
-            <h1>Posts</h1>
+            <Navbar />
 
-            {posts.map(post => (
+            <Routes>
 
-                <article key={post.id}>
+                <Route
+                    path="/"
+                    element={
+                        <ProtectedRoute>
+                            <Index />
+                        </ProtectedRoute>
+                    }
+                />
 
-                    <h2>
-                        {post.title}
-                    </h2>
+                <Route
+                    path="/login"
+                    element={<Login />}
+                />
 
-                    <p>
-                        {post.body}
-                    </p>
+                <Route
+                    path="/register"
+                    element={<Register />}
+                />
 
-                </article>
+            </Routes>
 
-            ))}
-
-        </div>
+        </BrowserRouter>
     )
 }
 
