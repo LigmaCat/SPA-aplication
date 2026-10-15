@@ -1,40 +1,57 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api/api'
 
-function Login() {
+// Define the user returned by Laravel
+type User = {
+    id: number
+    name: string
+    email: string
+}
 
+// Define the login API response
+type LoginResponse = {
+    token: string
+    user: User
+}
+
+// Safely handle errors
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message
+    }
+
+    return 'An unexpected error occurred.'
+}
+
+function Login() {
     const navigate = useNavigate()
 
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
+    const [email, setEmail] = useState<string>('')
+    const [password, setPassword] = useState<string>('')
 
-    const [error, setError] = useState(null)
-    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState<boolean>(false)
 
-    async function handleSubmit(event) {
-
+    async function handleSubmit(
+        event: FormEvent<HTMLFormElement>
+    ): Promise<void> {
         event.preventDefault()
 
         setError(null)
         setLoading(true)
 
         try {
-
             const data = await apiFetch('/login', {
                 method: 'POST',
-
                 body: JSON.stringify({
                     email,
                     password,
                 }),
-            })
+            }) as LoginResponse
 
             // Save Laravel Sanctum token
-            localStorage.setItem(
-                'token',
-                data.token
-            )
+            localStorage.setItem('token', data.token)
 
             // Save user information
             localStorage.setItem(
@@ -44,22 +61,15 @@ function Login() {
 
             // Go to posts
             navigate('/')
-
-        } catch (error) {
-
-            setError(error.message)
-
+        } catch (error: unknown) {
+            setError(getErrorMessage(error))
         } finally {
-
             setLoading(false)
-
         }
     }
 
-
     return (
         <div>
-
             <h1>Login</h1>
 
             {error && (
@@ -69,63 +79,54 @@ function Login() {
             )}
 
             <form onSubmit={handleSubmit}>
-
                 <div>
-                    <label>
+                    <label htmlFor="email">
                         Email
                     </label>
-
                     <br />
 
                     <input
+                        id="email"
                         type="email"
                         value={email}
-                        onChange={(event) =>
+                        onChange={event =>
                             setEmail(event.target.value)
                         }
                         required
                     />
                 </div>
 
-
                 <div>
-                    <label>
+                    <label htmlFor="password">
                         Password
                     </label>
-
                     <br />
 
                     <input
+                        id="password"
                         type="password"
                         value={password}
-                        onChange={(event) =>
+                        onChange={event =>
                             setPassword(event.target.value)
                         }
                         required
                     />
                 </div>
 
-
                 <button
                     type="submit"
                     disabled={loading}
                 >
-                    {loading
-                        ? 'Logging in...'
-                        : 'Login'
-                    }
+                    {loading ? 'Logging in...' : 'Login'}
                 </button>
-
             </form>
 
             <p>
-                Don't have an account?
-                {' '}
-                <a href="/register">
+                Don't have an account?{' '}
+                <Link to="/register">
                     Register
-                </a>
+                </Link>
             </p>
-
         </div>
     )
 }

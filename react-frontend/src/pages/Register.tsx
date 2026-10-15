@@ -1,21 +1,44 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api/api'
 
-function Register() {
+// Define the user returned by Laravel
+type User = {
+    id: number
+    name: string
+    email: string
+}
 
+// Define the registration API response
+type RegisterResponse = {
+    token: string
+    user: User
+}
+
+// Safely handle errors
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message
+    }
+
+    return 'An unexpected error occurred.'
+}
+
+function Register() {
     const navigate = useNavigate()
 
-    const [name, setName] = useState('')
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [passwordConfirmation, setPasswordConfirmation] = useState('')
+    const [name, setName] = useState<string>('')
+    const [email, setEmail] = useState<string>('')
+    const [password, setPassword] = useState<string>('')
+    const [passwordConfirmation, setPasswordConfirmation] =
+        useState<string>('')
 
-    const [error, setError] = useState(null)
-    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState<boolean>(false)
 
-    async function handleSubmit(event) {
-
+    async function handleSubmit(
+        event: FormEvent<HTMLFormElement>
+    ): Promise<void> {
         event.preventDefault()
 
         setError(null)
@@ -28,25 +51,20 @@ function Register() {
         setLoading(true)
 
         try {
-
             const data = await apiFetch('/register', {
                 method: 'POST',
-
                 body: JSON.stringify({
                     name,
                     email,
                     password,
                     password_confirmation: passwordConfirmation,
                 }),
-            })
+            }) as RegisterResponse
 
-            // Laravel gives us a token immediately
-            localStorage.setItem(
-                'token',
-                data.token
-            )
+            // Save Laravel Sanctum token
+            localStorage.setItem('token', data.token)
 
-            // Save the user
+            // Save user information
             localStorage.setItem(
                 'user',
                 JSON.stringify(data.user)
@@ -54,22 +72,15 @@ function Register() {
 
             // Go to posts
             navigate('/')
-
-        } catch (error) {
-
-            setError(error.message)
-
+        } catch (error: unknown) {
+            setError(getErrorMessage(error))
         } finally {
-
             setLoading(false)
-
         }
     }
 
-
     return (
         <div>
-
             <h1>Register</h1>
 
             {error && (
@@ -79,78 +90,73 @@ function Register() {
             )}
 
             <form onSubmit={handleSubmit}>
-
                 <div>
-                    <label>
+                    <label htmlFor="name">
                         Name
                     </label>
-
                     <br />
 
                     <input
+                        id="name"
                         type="text"
                         value={name}
-                        onChange={(event) =>
+                        onChange={event =>
                             setName(event.target.value)
                         }
                         required
                     />
                 </div>
 
-
                 <div>
-                    <label>
+                    <label htmlFor="email">
                         Email
                     </label>
-
                     <br />
 
                     <input
+                        id="email"
                         type="email"
                         value={email}
-                        onChange={(event) =>
+                        onChange={event =>
                             setEmail(event.target.value)
                         }
                         required
                     />
                 </div>
 
-
                 <div>
-                    <label>
+                    <label htmlFor="password">
                         Password
                     </label>
-
                     <br />
 
                     <input
+                        id="password"
                         type="password"
                         value={password}
-                        onChange={(event) =>
+                        onChange={event =>
                             setPassword(event.target.value)
                         }
                         required
                     />
                 </div>
 
-
                 <div>
-                    <label>
+                    <label htmlFor="passwordConfirmation">
                         Confirm password
                     </label>
-
                     <br />
 
                     <input
+                        id="passwordConfirmation"
                         type="password"
                         value={passwordConfirmation}
-                        onChange={(event) =>
+                        onChange={event =>
                             setPasswordConfirmation(event.target.value)
                         }
                         required
                     />
                 </div>
-
 
                 <button
                     type="submit"
@@ -158,21 +164,16 @@ function Register() {
                 >
                     {loading
                         ? 'Creating account...'
-                        : 'Register'
-                    }
+                        : 'Register'}
                 </button>
-
             </form>
 
-
             <p>
-                Already have an account?
-                {' '}
-                <a href="/login">
+                Already have an account?{' '}
+                <Link to="/login">
                     Login
-                </a>
+                </Link>
             </p>
-
         </div>
     )
 }
