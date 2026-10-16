@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Controllers\AuthController;
@@ -10,13 +11,24 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Public routes
+| Public authentication routes
 |--------------------------------------------------------------------------
 */
 
 Route::post('/register', [AuthController::class, 'register']);
-
 Route::post('/login', [AuthController::class, 'login']);
+
+/*
+|--------------------------------------------------------------------------
+| Public read routes
+|--------------------------------------------------------------------------
+*/
+
+Route::apiResource('posts', PostController::class)
+    ->only(['index', 'show']);
+
+Route::apiResource('posts.comments', CommentController::class)
+    ->only(['index', 'show']);
 
 /*
 |--------------------------------------------------------------------------
@@ -26,61 +38,22 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Current user
-    |--------------------------------------------------------------------------
-    */
-
     Route::get('/user', function (Request $request) {
-
         return $request->user();
-
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Logout
-    |--------------------------------------------------------------------------
-    */
+    Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::post(
-        '/logout',
-        [AuthController::class, 'logout']
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Posts
-    |--------------------------------------------------------------------------
-    */
-
-    Route::apiResource(
-        'posts',
-        PostController::class
-    );
+    Route::apiResource('posts', PostController::class)
+        ->except(['index', 'show']);
 
     Route::patch(
         'posts/{post}/status',
         [PostController::class, 'updateStatus']
     );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Comments
-    |--------------------------------------------------------------------------
-    */
-
-    Route::apiResource(
-        'posts.comments',
-        CommentController::class
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Users / Roles
-    |--------------------------------------------------------------------------
-    */
+    Route::apiResource('posts.comments', CommentController::class)
+        ->except(['index', 'show']);
 
     Route::post(
         'users/{user}/assign-role',
@@ -91,26 +64,22 @@ Route::middleware('auth:sanctum')->group(function () {
         'users/{user}/remove-role',
         [UserController::class, 'removeRole']
     );
-
 });
 
 /*
 |--------------------------------------------------------------------------
-| Test routes
+| Demo routes
 |--------------------------------------------------------------------------
 */
 
 Route::post('/test-post', function (Request $request) {
-
     return response()->json([
         'message' => 'Post received!',
         'data' => $request->all(),
     ]);
-
 });
 
 Route::post('/demo-posts', function (Request $request) {
-
     $data = $request->validate([
         'title' => 'required|max:255',
         'body' => 'required',
@@ -118,9 +87,5 @@ Route::post('/demo-posts', function (Request $request) {
 
     $post = Post::create($data);
 
-    return response()->json(
-        $post,
-        201
-    );
-
+    return response()->json($post, 201);
 });
