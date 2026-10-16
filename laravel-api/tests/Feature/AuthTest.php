@@ -48,22 +48,22 @@ class AuthTest extends TestCase
     }
 
     public function test_login_with_wrong_password_returns_no_token(): void
-{
-    User::factory()->create([
-        'email' => 'anna@example.com',
-        'password' => 'secret123',
-    ]);
-
-    $this->postJson('/api/login', [
-        'email' => 'anna@example.com',
-        'password' => 'wrong',
-    ])
-        ->assertUnauthorized()
-        ->assertJsonMissingPath('token')
-        ->assertJson([
-            'message' => 'The provided credentials are incorrect.',
+    {
+        User::factory()->create([
+            'email' => 'anna@example.com',
+            'password' => 'secret123',
         ]);
-}
+
+        $this->postJson('/api/login', [
+            'email' => 'anna@example.com',
+            'password' => 'wrong',
+        ])
+            ->assertUnauthorized()
+            ->assertJsonMissingPath('token')
+            ->assertJson([
+                'message' => 'The provided credentials are incorrect.',
+            ]);
+    }
 
     public function test_protected_route_rejects_missing_or_invalid_token(): void
     {
