@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\Gate;
 
 class CommentController extends Controller implements HasMiddleware
 {
-    public static function middleware() {
+    public static function middleware()
+    {
         return [
-            new Middleware('auth:sanctum', except: ['index'])
+            new Middleware('auth:sanctum', except: ['index']),
         ];
     }
 

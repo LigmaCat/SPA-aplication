@@ -11,7 +11,8 @@ class Post extends Model
 
     protected $fillable = ['title', 'body', 'post_status_id'];
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
 

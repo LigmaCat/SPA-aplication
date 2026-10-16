@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -22,25 +22,21 @@ class AuthController extends Controller
             'password' => 'required|confirmed',
         ]);
 
-
         $user = User::create([
             'name' => $fields['name'],
             'email' => $fields['email'],
             'password' => Hash::make($fields['password']),
         ]);
 
-
         $token = $user->createToken(
             $user->name
         );
-
 
         return response()->json([
             'user' => $user,
             'token' => $token->plainTextToken,
         ], 201);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -55,39 +51,33 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-
         $user = User::where(
             'email',
             $request->email
         )->first();
 
-
         if (
-            !$user ||
-            !Hash::check(
+            ! $user ||
+            ! Hash::check(
                 $request->password,
                 $user->password
             )
         ) {
 
             return response()->json([
-                'message' =>
-                    'The provided credentials are incorrect.',
+                'message' => 'The provided credentials are incorrect.',
             ], 401);
         }
-
 
         $token = $user->createToken(
             $user->name
         );
-
 
         return response()->json([
             'user' => $user,
             'token' => $token->plainTextToken,
         ]);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -101,10 +91,8 @@ class AuthController extends Controller
             ->tokens()
             ->delete();
 
-
         return response()->json([
-            'message' =>
-                'You are logged out.',
+            'message' => 'You are logged out.',
         ]);
     }
 }

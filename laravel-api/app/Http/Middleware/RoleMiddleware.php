@@ -11,12 +11,12 @@ class RoleMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next, string $role): Response
     {
         \Log::debug($role);
-        if (!$request->user() || !$request->user()->roles()->whereIn('name', $roles)->exists()) {
+        if (! $request->user() || ! $request->user()->roles()->whereIn('name', $roles)->exists()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
